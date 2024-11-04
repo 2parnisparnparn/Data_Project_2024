@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก - Order Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .register-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .password-requirements {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .register-button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .register-button:hover {
+            background-color: #357abd;
+        }
+
+        .register-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+            padding: 0.5rem;
+            background-color: #ffe6e6;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+            padding: 0.5rem;
+            background-color: #e6ffe6;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: #666;
+            position: relative;
+            padding-left: 24px;
+        }
+
+        @keyframes spinner {
+            to {transform: rotate(360deg);}
+        }
+        
+        .loading:before {
+            content: '';
+            box-sizing: border-box;
+            position: absolute;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            border-top-color: #4a90e2;
+            animation: spinner .6s linear infinite;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .login-link a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .validation-error {
+            color: #dc3545;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>สมัครสมาชิก</h1>
+            <p>กรอกข้อมูลเพื่อสร้างบัญชีผู้ใช้ใหม่</p>
+        </div>
+
+        <form id="registerForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="username">ชื่อผู้ใช้ *</label>
+                    <input type="text" id="username" name="username" required 
+                           minlength="4" autocomplete="username">
+                    <div id="usernameError" class="validation-error">
+                        ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 4 ตัวอักษร
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">อีเมล *</label>
+                    <input type="email" id="email" name="email" required 
+                           autocomplete="email">
+                    <div id="emailError" class="validation-error">
+                        กรุณากรอกอีเมลให้ถูกต้อง
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">รหัสผ่าน *</label>
+                    <input type="password" id="password" name="password" required 
+                           minlength="8" autocomplete="new-password">
+                    <div class="password-requirements">
+                        รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร
+                    </div>
+                    <div id="passwordError" class="validation-error">
+                        รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">ยืนยันรหัสผ่าน *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" 
+                           required minlength="8" autocomplete="new-password">
+                    <div id="confirmPasswordError" class="validation-error">
+                        รหัสผ่านไม่ตรงกัน
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            <div id="loading" class="loading">กำลังดำเนินการ...</div>
+
+            <button type="submit" class="register-button" id="registerButton">สมัครสมาชิก</button>
+        </form>
+
+        <div class="login-link">
+            มีบัญชีผู้ใช้แล้ว? <a href="index.html">เข้าสู่ระบบ</a>
+        </div>
+    </div>
+
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loading = document.getElementById('loading');
+        const registerButton = document.getElementById('registerButton');
+
+        // Validation elements
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const usernameError = document.getElementById('usernameError');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+        // Real-time validation
+        usernameInput.addEventListener('input', () => {
+            if (usernameInput.value.length < 4) {
+                usernameError.style.display = 'block';
+            } else {
+                usernameError.style.display = 'none';
+            }
+        });
+
+        emailInput.addEventListener('input', () => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailInput.value)) {
+                emailError.style.display = 'block';
+            } else {
+                emailError.style.display = 'none';
+            }
+        });
+
+        passwordInput.addEventListener('input', () => {
+            if (passwordInput.value.length < 8) {
+                passwordError.style.display = 'block';
+            } else {
+                passwordError.style.display = 'none';
+            }
+            validatePasswordMatch();
+        });
+
+        confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+
+        function validatePasswordMatch() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordError.style.display = 'block';
+            } else {
+                confirmPasswordError.style.display = 'none';
+            }
+        }
+
+        // Function to show error
+        const showError = (message) => {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            loading.style.display = 'none';
+            registerButton.disabled = false;
+        };
+
+        // Function to show success
+        const showSuccess = (message) => {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            loading.style.display = 'none';
+            registerButton.disabled = false;
+        };
+
+        // Handle form submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Reset messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // Validate password match
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                showError('รหัสผ่านไม่ตรงกัน');
+                return;
+            }
+
+            // Show loading
+            loading.style.display = 'block';
+            registerButton.disabled = true;
+
+            const formData = {
+                username: usernameInput.value,
+                email: emailInput.value,
+                password: passwordInput.value
+            };
+
+            try {
+                const response = await fetch('http://localhost:5501/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'เกิดข้อผิดพลาดในการสมัครสมาชิก');
+                }
+
+                showSuccess('สมัครสมาชิกสำเร็จ กำลังนำท่านไปยังหน้าเข้าสู่ระบบ...');
+
+                // Clear form
+                registerForm.reset();
+
+                // Redirect to login page after successful registration
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+
+            } catch (error) {
+                showError(error.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            }
+        });
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

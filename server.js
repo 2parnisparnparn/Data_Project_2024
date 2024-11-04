@@ -39,6 +39,32 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// User Schema
+const userSchema = new mongoose.Schema({
+    username: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true
+    },
+    role: {
+        type: String,
+        enum: ['admin', 'user'],
+        default: 'user'
+    }
+}, {
+    timestamps: true
+});
+
+const User = mongoose.model('User', userSchema);
 const Order = mongoose.model('Order', orderSchema);
 
 // API Routes
@@ -337,6 +363,147 @@ app.get('/api/export-excel', async (req, res) => {
         res.status(500).json({ error: 'Error exporting to Excel' });
     }
 });
+
+// Register endpoint
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+
+        // Validation
+        if (!username || !email || !password) {
+            return res.status(400).json({ 
+                error: 'กรุณากรอกข้อมูลให้ครบถ้วน'
+            });
+        }
+
+        // Check username format
+        if (username.length < 4) {
+            return res.status(400).json({ 
+                error: 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 4 ตัวอักษร'
+            });
+        }
+
+        // Check email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                error: 'รูปแบบอีเมลไม่ถูกต้อง'
+            });
+        }
+
+        // Check password length
+        if (password.length < 8) {
+            return res.status(400).json({ 
+                error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร'
+            });
+        }
+
+        // Check if username already exists
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ 
+                error: 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว'
+            });
+        }
+
+        // Check if email already exists
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ 
+                error: 'อีเมลนี้ถูกใช้งานแล้ว'
+            });
+        }
+
+        // Create new user
+        const user = new User({
+            username,
+            email,
+            password, // ในการใช้งานจริงควรเข้ารหัสด้วย bcrypt
+            role: 'user'
+        });
+
+        const savedUser = await user.save();
+
+        res.status(201).json({
+            message: 'ลงทะเบียนสำเร็จ',
+            user: {
+                id: savedUser._id,
+                username: savedUser.username,
+                email: savedUser.email,
+                role: savedUser.role
+            }
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({
+            error: 'เกิดข้อผิดพลาดในการลงทะเบียน',
+            details: error.message
+        });
+    }
+});
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+
+        const user = await User.findOne({ username, password });
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // In a production environment, you should use JWT or sessions
+        const token = Buffer.from(`${username}:${password}`).toString('base64');
+
+        res.status(200).json({
+            message: 'Login successful',
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            },
+            token: `Basic ${token}`
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            error: 'Login failed',
+            details: error.message
+        });
+    }
+});
+
+// Middleware to check if user is authenticated
+const authenticateUser = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const [username, password] = Buffer.from(token.split(' ')[1], 'base64')
+            .toString()
+            .split(':');
+
+        const user = await User.findOne({ username, password });
+        
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Authentication error' });
+    }
+};
 
 // Start server
 const PORT = 5501;
